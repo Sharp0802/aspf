@@ -113,6 +113,24 @@ static __always_inline int arp_pass(void *begin, void *end) {
 
   // do not check overflow; it's LRU map
   bpf_map_update_elem(&ip_mac_table, &key, &entry, BPF_ANY);
+
+  // drop first arp; for consistency
+  if (!old) {
+    struct arp_block_event *e;
+    e = bpf_ringbuf_reserve(&arp_events, sizeof *e, 0);
+    if (!e) {
+      return XDP_DROP;
+    }
+
+    e->timestamp = timestamp;
+    e->ip = key;
+    __builtin_memcpy(e->org_mac, src_hrd, 6);
+    __builtin_memcpy(e->mod_mac, src_hrd, 6);
+    bpf_ringbuf_submit(e, 0);
+
+    return XDP_DROP;
+  }
+
   return XDP_PASS;
 }
 

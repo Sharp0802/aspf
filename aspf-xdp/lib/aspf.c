@@ -1,14 +1,33 @@
+/*
+ * This file is part of ASpf.
+ * Copyright (C) 2025  Yeong-won Seo
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #define KERNEL
 
 #include "vmlinux.h"
+
 #include "aspf/aspf-core.h"
 #include <bpf/bpf_helpers.h>
 
 #define ETH_P_IP 0x0800
 #define ETH_P_ARP 0x0806
 
-#define uintptr(a) ((void *) (uintptr_t) (a))
-#define next_of(a) ((void*)((a) + 1))
+#define uintptr(a) ((void *)(uintptr_t)(a))
+#define next_of(a) ((void *)((a) + 1))
 
 #define E_INSUFFICIENT_BYTES XDP_PASS
 
@@ -46,10 +65,8 @@ static __always_inline int arp_pass(void *begin, void *end) {
     return E_INSUFFICIENT_BYTES;
   }
 
-  if (bpf_ntohs(arp->ar_hrd) != 1 ||
-      bpf_ntohs(arp->ar_pro) != ETH_P_IP ||
-      arp->ar_hln != 6 ||
-      arp->ar_pln != 4) {
+  if (bpf_ntohs(arp->ar_hrd) != 1 || arp->ar_hln != 6 ||
+      bpf_ntohs(arp->ar_pro) != ETH_P_IP || arp->ar_pln != 4) {
     return XDP_PASS;
   }
 
@@ -59,14 +76,13 @@ static __always_inline int arp_pass(void *begin, void *end) {
     return E_INSUFFICIENT_BYTES;
   }
 
-  __be32 key = *(__be32*)src_pro;
+  __be32 key = *(__be32 *)src_pro;
   __u64 timestamp = bpf_ktime_get_boot_ns();
 
-  __u64 *p_gc_stale_time = bpf_map_lookup_elem(
-      &config_table, &(__u32){ CONFIG_GC_STALE_TIME });
-  __u64 gc_stale_time = p_gc_stale_time
-                            ? *p_gc_stale_time
-                            : DEFAULT_GC_STALE_TIME;
+  __u64 *p_gc_stale_time =
+      bpf_map_lookup_elem(&config_table, &(__u32){CONFIG_GC_STALE_TIME});
+  __u64 gc_stale_time =
+      p_gc_stale_time ? *p_gc_stale_time : DEFAULT_GC_STALE_TIME;
 
   struct ip_mac_entry *old = bpf_map_lookup_elem(&ip_mac_table, &key);
   if (old && (timestamp - old->timestamp) <= gc_stale_time) {
@@ -89,7 +105,6 @@ static __always_inline int arp_pass(void *begin, void *end) {
 
       return XDP_DROP;
     }
-
   }
 
   struct ip_mac_entry entry = {};

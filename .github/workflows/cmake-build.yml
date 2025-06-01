@@ -16,6 +16,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Install libbpf
+      run: apt install libbpf-dev
+
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_C_COMPILER="/usr/bin/clang" -DCMAKE_CXX_COMPILER="/usr/bin/clang++"
 

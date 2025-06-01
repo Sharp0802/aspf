@@ -74,6 +74,7 @@ static int handle_event(__unused void *ctx, void *data, size_t len) {
 
   printf("[arp] [%.2lf] %s : " MAC_F " --> " MAC_F "\n", ts_s, ip,
          MAC_F_ARG(e->org_mac), MAC_F_ARG(e->mod_mac));
+  fflush(stdout);
 
   return 0;
 }
